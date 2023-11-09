@@ -1,17 +1,32 @@
 #importing the libraries
+from cv2 import Mat
 import numpy as np #for mathematical calculations
 import cv2 #for face detection and other image operations
 import dlib #for detection of facial landmarks ex:nose,jawline,eyes
 from sklearn.cluster import KMeans #for clustering
 
+def normalize_image(img: Mat, normalized_length:int=640, square:bool=False) -> Mat:
+    (h, w, _) = img.shape
+  
+   # if (not square and w > h):
+    #    raise WrongImageException("Please provide a portrait image")
+
+    scale_factor = normalized_length/float(min(h,w))
+    dim = (int(w*scale_factor), int(h*scale_factor))
+    normalized_img = cv2.resize(img, dim ,cv2.INTER_AREA)
+    if (square):
+        normalized_img = normalized_img[int(abs(dim[1]-normalized_length)/2):normalized_length, int(abs(dim[0]-normalized_length)/2):normalized_length]
+
+    return normalized_img
+
 #load the image
-imagepath = "D:\workspace\FaceShape\i7.jpg"
+imagepath = "D:\\git\\theproject\\media\\selfies\\faccia_occhi_marroni.jpg"
 #haarcascade for detecting faces
 # link = https://github.com/opencv/opencv/tree/master/data/haarcascades
-face_cascade_path = "D:\workspace\FaceShape\haarcascade_frontalface_default.xml"
+face_cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 #.dat file for detecting facial landmarks
 #download file path = http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
-predictor_path = "D:\workspace\FaceShape\shape_predictor_68_face_landmarks.dat"
+predictor_path = "D:\\git\\theproject\\resources\\shape_predictor_68_face_landmarks.dat"
 
 #create the haar cascade for detecting face and smile
 faceCascade = cv2.CascadeClassifier(face_cascade_path)
@@ -23,7 +38,7 @@ predictor = dlib.shape_predictor(predictor_path)
 image = cv2.imread(imagepath)
 
 #resizing the image to 000 cols nd 500 rows
-image = cv2.resize(image, (500, 500)) 
+image = normalize_image(image) 
 #making another copy
 original = image.copy()
 
@@ -76,6 +91,7 @@ for (x,y,w,h) in faces:
     temp = original.copy()
     #getting area of interest from image i.e., forehead (25% of face)
     forehead = temp[y:y+int(0.25*h), x:x+w]
+    cv2.rectangle(results, (x,y), (x+w,y+int(0.25*h)), (255,255,0), 1)
     rows,cols, bands = forehead.shape
     X = forehead.reshape(rows*cols,bands)
     """
@@ -192,5 +208,6 @@ for i in range(1):
       break;
   print("Damn! Contact the developer")
 
-output = np.concatenate((original,results), axis=1)
-cv2.imshow('output',output)
+#output = np.concatenate((original,results), axis=1)
+cv2.imshow('output',results)
+cv2.waitKey()
